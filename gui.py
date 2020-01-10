@@ -30,18 +30,31 @@ class deviceDownloadFrame(ttk.Frame):
 		self.outputText["state"] = "disabled"
 		
 	def startDownload(self):
-		self.thread = threading.Thread(target=self.devDownFunc, name="Thread-"+self.deviceName, args=(self.COMEntry.get().strip(),))
-		self.thread.start()
+		self.cleanOutput()
 		self.btnStart["state"] = "disable"
-		#self.btnStop["state"] = "normal"
-		#self.devDownFunc(self.COMEntry.get().strip())
-				
+		self.thread = threading.Thread(target=self.devDownFunc, name="Thread-"+self.deviceName, args=(self.COMEntry.get().strip(),), daemon=True)
+		self.thread.start()
+			
 			
 	def devDownFunc(self, com):
+		if com == "":
+			self.outputText["state"] = "normal"
+			self.outputText.insert(tk.END, "COM NOT SET")
+			self.outputText["state"] = "disabled"
+			self.btnStart["state"] = "normal"
+			return
+		
 		filename = self.master.master.imageFilePathEntry.get().strip()
-		need_erase = self.master.master.optionErase
-		need_verify = self.master.master.optionVerify
-		print(com)
+		need_erase = self.master.master.optionErase.get()
+		need_verify = self.master.master.optionVerify.get()
+		
+		if filename == "":
+			self.outputText["state"] = "normal"
+			self.outputText.insert(tk.END, "FILENAME NOT SET")
+			self.outputText["state"] = "disabled"
+			self.btnStart["state"] = "normal"
+			return
+			
 		cmdStr = "BIN\STMFlashLoader.exe -c --pn " + com + " --br 115200 -i STM32F0_3x_16K -d --fn " + filename
 		if (need_verify):
 			cmdStr += " --v"
@@ -56,16 +69,16 @@ class deviceDownloadFrame(ttk.Frame):
 			strLine = line.decode("gb2312")
 			#print(line.decode("utf-8"))
 			self.outputText.insert(tk.END, strLine)
-		#for line in p.readlines():
-		#	print(line)
-		#	if line.find("Press any key to continue ...") != -1:
-		#		p.close()
 		print(p.returncode)
 		self.outputText["state"] = "disabled"
-		print(com + "done")
+		#print(com + "done")
 		self.btnStart["state"] = "normal"
 		self.master.master.startAllBtnEnableChk()
-		
+	
+	def cleanOutput(self):
+		self.outputText["state"] = "normal"
+		self.outputText.delete(1.0, tk.END)
+		self.outputText["state"] = "disabled"
 
 class Application(ttk.Frame):
 	def __init__(self, master=None):
